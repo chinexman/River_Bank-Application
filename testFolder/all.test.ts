@@ -167,6 +167,56 @@ describe("ACCOUNT TEST", () => {
   });
 
  
+  
  
 });
 
+describe("TRANSFER TEST /transfer/:senderId", () => {
+  it("should transfer funds successfully", async () => {
+
+     //login user
+     const response1 = await request
+     .post("/users/login")
+     .send(user1Login)
+     .expect(200);
+    const sender = await userModel.create({
+      owner: "user123",
+      accountnumber: "ACC123",
+      accountbalance: 500,
+    });
+    const receiver = await userModel.create({
+      owner: "user456",
+      accountnumber: "ACC456",
+      accountbalance: 100,
+    });
+
+    const transferData = {
+      accountnumber: sender.accountnumber,
+      receiver: receiver.accountnumber,
+      receiverId: receiver._id.toString(),
+      amount: "200",
+      description: "Test transfer",
+    };
+
+    // Mock user in the request - you might want to mock Authorization middleware to add req.user
+    const response = await request
+      .post(`/transfer/${sender._id.toString()}`)
+      .send(transferData)
+      .set("token", response1.body.token)
+      .expect(200);
+
+    expect(response.body.msg).toBe("Transfer successful");
+    expect(response.body.sender.accountbalance).toBe(300);
+    expect(response.body.receiver.accountbalance).toBe(300);
+    expect(response.body.transaction.amount).toBe(200);
+    expect(response.body.transaction.description).toBe("Test transfer");
+  });
+
+  it("should return 400 if validation fails", async () => {
+    const response = await request
+      .post("/transfer/someSenderId")
+      .send({ amount: "bad input" })
+      .expect(400);
+    expect(response.body.message).toBeDefined();
+  });
+});
