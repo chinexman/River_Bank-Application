@@ -7,6 +7,8 @@ import databaseConnection from "./config/db_config";
 import dotenv from "dotenv";
 import usersRouter from "./routers/users";
 import mainAccountRouter from "./routers/account_router";
+import { apiRateLimiter } from "./middleware/rateLimiter";
+
 
 
 dotenv.config();
@@ -19,6 +21,7 @@ databaseConnection();
 app.set("views", path.join(__dirname, "../", "views"));
 app.set("view engine", "jade");
 
+app.use("/api", apiRateLimiter);
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
