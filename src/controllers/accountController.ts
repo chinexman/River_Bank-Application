@@ -146,7 +146,7 @@ async function getAccountBalance(req: customRequest, res: Response) {
   //   { new: true }
   // );
   res.status(200).json({
-    "Account Balance is #" :balance
+    balance :balance
   });
 
 } catch (err) {
@@ -160,8 +160,8 @@ async function depositFunds(req: customRequest, res: Response) {
   const user_id = req.user?.user_id;
   const accountId = req.params.accountId;
   const { accountnumber,amount } = req.body;
-  console.log("req.body getAccount Balance",req.body)
-  console.log("req.params",req.params)
+  console.log("req.body depositFunds",req.body)
+  console.log("req.params depositFunds",req.params)
 
   //validating
   const accountSchema = joi.object({
@@ -173,13 +173,14 @@ async function depositFunds(req: customRequest, res: Response) {
   });
   //error messages
   const accountUpdate = accountSchema.validate(req.body);
+  console.log("accountUpdate",accountUpdate)
   if (accountUpdate.error) {
     return res.status(400).json({
       message: accountUpdate.error.details[0].message,
     });
   }
   let account = await accountModel.findOne({ accountnumber: accountnumber });
-   console.log("account",account)
+   console.log(" depositFunds account exist",account)
 
 
   if (!account) {
@@ -187,7 +188,6 @@ async function depositFunds(req: customRequest, res: Response) {
       msg: "Account does not exist.",
     });
   }
-  console.log("account",account)
 
   if (account.owner !== user_id?.toString()) {
     return res.status(403).json({
@@ -203,6 +203,8 @@ async function depositFunds(req: customRequest, res: Response) {
     { accountbalance: balance },
     { new: true }
   );
+
+  console.log(" depositFunds updateAccount",updateAccount)
 
   res.status(200).json({
     updatedAccount: updateAccount,
@@ -220,7 +222,7 @@ async function withdrawFunds(req: customRequest, res: Response) {
   const user_id = req.user?.user_id;
   const accountId = req.params.accountId;
   const { accountnumber,amount } = req.body;
-  console.log("req.body getAccount Balance",req.body)
+  console.log("req.body withdrawFunds",req.body)
   console.log("req.params",req.params)
 
   //validating
@@ -239,7 +241,7 @@ async function withdrawFunds(req: customRequest, res: Response) {
     });
   }
   let account = await accountModel.findOne({ accountnumber: accountnumber });
-   console.log("account",account)
+   console.log("account withdrawFunds exist",account)
 
 
   if (!account) {
@@ -247,7 +249,6 @@ async function withdrawFunds(req: customRequest, res: Response) {
       msg: "Account does not exist.",
     });
   }
-  console.log("account",account)
 
   if (account.owner !== user_id?.toString()) {
     return res.status(403).json({
@@ -270,6 +271,7 @@ let balance
     { accountbalance: balance },
     { new: true }
   );
+  console.log("withdrawFunds updateAccount",updateAccount)
 
   res.status(200).json({
     updatedAccount: updateAccount,
@@ -360,6 +362,8 @@ async function transferFunds(req: customRequest, res: Response) {
     { accountbalance: receiverBalance },
     { new: true }
   );
+console.log("updateSenderAccount",updateSenderAccount)
+console.log("updateRecieverAccount",updateRecieverAccount)
 
   let transaction = await TransactionModel.create({
     sender: senderId,
