@@ -288,7 +288,7 @@ async function transferFunds(req: customRequest, res: Response) {
   //extract details
   const user_id = req.user?.user_id;
   const senderId = req.params.senderId;
-  const { accountnumber,receiver , receiverId ,amount} = req.body;
+  const { accountnumber,receiver , receiverId ,amount ,type} = req.body;
   console.log("req.body getAccount Balance",req.body)
   console.log("req.params",req.params)
 
@@ -299,6 +299,8 @@ async function transferFunds(req: customRequest, res: Response) {
     receiverId: joi.string().min(3).max(50).required(),
     amount:joi.string().min(0).max(20).required(),
     description: joi.string().required(),
+    type: joi.string().valid("deposit", "withdraw", "transfer").optional(),
+
 
   });
   //error messages
@@ -369,7 +371,7 @@ console.log("updateRecieverAccount",updateRecieverAccount)
     sender: senderId,
     receiver: receiverId,
     amount: +amount,
-    type: 'transfer',
+    type: type,
     description: req.body.description,
     date: new Date(),
   });
@@ -399,13 +401,16 @@ async function getAccountHistory(req: customRequest, res: Response) {
   //extract details
   const user_id = req.user?.user_id;
   // const accountId = req.params.accountId;
-  const { accountnumber } = req.body;
+  const { accountnumber , startDate, endDate, type ,page = 1, limit = 10 } = req.body;
   console.log("req.body getAccount Balance",req.body)
   console.log("req.params",req.params)
 
   //validating
   const accountSchema = joi.object({
     accountnumber: joi.string().min(3).max(20).required(),
+    startDate: joi.date().optional(),
+    endDate: joi.date().optional(),
+    type: joi.string().valid("deposit", "withdraw", "transfer").optional(),
   });
   //error messages
   const accountUpdate = accountSchema.validate(req.body);
@@ -431,17 +436,54 @@ async function getAccountHistory(req: customRequest, res: Response) {
     });
   }
 
- // Fetch transactions involving this account (as sender or receiver)
- const transactions = await TransactionModel.find({
-  $or: [
-    { sender: account._id },
-    { receiver: account._id }
-  ]
-}).sort({ date: -1 }); // Optional: latest first
+      // Build dynamic query
+      const query: any = {
+        $or: [
+          { sender: account._id },
+          { receiver: account._id },
+        ]
+      };
+  
+      if (type) {
+        query.type = type;
+      }
+  
+      if (startDate || endDate) {
+        query.date = {};
+        if (startDate) query.date.$gte = new Date(startDate);
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999); // include entire endDate
+          query.date.$lte = end;
+        }      }
+
+        const pageNumber = parseInt(page);
+        const limitNumber = parseInt(limit);
+        const skip = (pageNumber - 1) * limitNumber;
+     
+     
+     
+        // Fetch transactions involving this account (as sender or receiver)
+        const [transactions, total] = await Promise.all([
+          TransactionModel.find(query)
+            .sort({ date: -1 })
+            .skip(skip)
+            .limit(limitNumber),
+          TransactionModel.countDocuments(query),
+        ]);
+    
+
+//  const transactions = await TransactionModel.find(query).sort({ date: -1 }); // Optional: latest first
 
 res.status(200).json({
   msg: "Transaction history retrieved successfully",
   transactions,
+  pagination: {
+    total,
+    page: pageNumber,
+    limit: limitNumber,
+    totalPages: Math.ceil(total / limitNumber),
+  },
 });
 
 } catch (err) {

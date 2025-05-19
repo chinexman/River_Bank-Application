@@ -18,7 +18,7 @@ import { transactionsInterface } from "../interfaces/interface";
   },
   type: {
     type: String,
-    enum: ['transfer'], // you can add more types if needed
+    enum: ['transfer','deposit','withdraw'], // you can add more types if needed
     default: 'transfer',
   },
   date: {
