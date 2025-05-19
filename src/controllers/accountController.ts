@@ -2,6 +2,7 @@ import Account from "../models/accountModel";
 import express, { Response, Request } from "express";
 import accountModel from "../models/accountModel";
 import TransactionModel  from '../models/transactionsModel';
+import Notification from "../models/notificationModel";
 import joi from "joi";
 type customRequest = Request & {
   user?: { user_id?: string; email?: string; name?: string };
@@ -196,7 +197,11 @@ async function depositFunds(req: customRequest, res: Response) {
   }
   const balance = +account?.accountbalance + +amount
   // const accountno = account?.accountnumber
-
+  await Notification.create({
+    user: account.owner,
+    type: "deposit",
+    message: `You deposited ₦${amount} to your account.`,
+  });
   //accessing database
   let updateAccount = await Account.findOneAndUpdate(
     { _id: accountId },
@@ -255,6 +260,8 @@ async function withdrawFunds(req: customRequest, res: Response) {
       msg: "You are not authorized to update this account.",
     });
   }
+
+
 let balance
      if(+account?.accountbalance >= +amount){
    balance = +account?.accountbalance - +amount
@@ -265,6 +272,11 @@ let balance
      }
   // const accountno = account?.accountnumber
 
+  await Notification.create({
+    user: account.owner,
+    type: "withdraw",
+    message: `You withdraw ₦${amount} from your account.`,
+  });
   //accessing database
   let updateAccount = await Account.findOneAndUpdate(
     { _id: accountId },
@@ -382,6 +394,19 @@ console.log("updateRecieverAccount",updateRecieverAccount)
   await Account.findByIdAndUpdate(receiverId, {
     $push: { transactions: transaction }
   });
+
+  await Notification.create({
+    user: account.owner, // sender
+    type,
+    message: `You transferred ₦${amount} to ${accountReciever.accountnumber}`,
+  });
+
+  await Notification.create({
+    user: accountReciever.owner, // receiver
+    type,
+    message: `You received ₦${amount} from ${account.accountnumber}`,
+  });
+
   res.status(200).json({
     msg: "Transfer successful",
     sender: updateSenderAccount,

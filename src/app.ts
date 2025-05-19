@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 import usersRouter from "./routers/users";
 import mainAccountRouter from "./routers/account_router";
 import { apiRateLimiter } from "./middleware/rateLimiter";
+import notificationRouter from "./routers/notification_router";
 
 
 
@@ -33,6 +34,8 @@ app.get("/", (req, res) => {
 
 app.use("/users", usersRouter);
 app.use("/accounts", mainAccountRouter);
+app.use("/notifications", notificationRouter);
+
 
 
 // catch 404 and forward to error handler
