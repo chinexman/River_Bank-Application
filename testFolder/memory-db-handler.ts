@@ -9,6 +9,10 @@ let mongod: MongoMemoryServer;
 const connect = async () => {
   mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
+  console.log("uri mongo",uri)
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.disconnect();
+  }
 
   const mongooseOpts = {
     useNewUrlParser: true,
