@@ -5,5 +5,5 @@ export const apiRateLimiter = rateLimit({
   max: 100, // Max requests per windowMs per IP
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true, 
-  legacyHeaders: false,
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
